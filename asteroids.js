@@ -20,7 +20,6 @@ MovingObject.prototype.offScreen = function (xDim, yDim) {
   var xOff = (this.xPos > xDim || this.xPos < 0);
   var yOff = (this.yPos > yDim || this.yPos < 0);
 
-  console.log(xOff);
   if (xOff || yOff) {
     return true;
   };
@@ -36,7 +35,7 @@ function Asteroid(xPos, yPos, radius) {
   var maxR = 20;
 
   this.velocity = {x: xDir * Math.random(), y: yDir * Math.random()};
-
+  
   this.randomAsteroid = function (maxX, maxY) {
     var side = Math.floor(Math.random() * 4);
     var x = 0;
@@ -89,7 +88,7 @@ function Game(xDim, yDim, numOfAsteroids) {
   this.xDim = xDim;
   this.yDim = yDim;
   this.ship = new Ship(xDim/2, yDim/2, 5, this);
-
+  
   this.asteroids = [];
   for (var i = 0; i < numOfAsteroids; i++) {
     var a = new Asteroid();
@@ -108,11 +107,18 @@ Game.prototype.draw = function (ctx) {
   this.bullets.forEach(function (bullet) {
     bullet.draw(ctx);
   });
+  
+  ctx.fillStyle = "violet";
+  ctx.font = 12 + "pt Verdana ";
+  ctx.fillText(this.score, 10, 20);
+  
+  
 };
 
 Game.prototype.update = function (win) {
   var that = this;
-
+  // $('#score').html("asteroids hit: " + this.score);
+  this.ship.velocity = {x: this.ship.velocity["x"] * 0.99, y: this.ship.velocity["y"] * 0.99};
   this.ship.update(this.ship.velocity);
   this.asteroids.forEach(function (asteroid) {
     if (asteroid.offScreen(that.xDim, that.yDim) === true){
@@ -129,8 +135,9 @@ Game.prototype.update = function (win) {
   });
 
   if (this.ship.isHit(this.asteroids) === true) {
-    alert("You've been hit!");
+    alert("you've been hit!\nasteroids hit: " + this.score);
     clearInterval(win);
+    location.reload(); // refresh page
   };
 
 };
@@ -138,18 +145,13 @@ Game.prototype.update = function (win) {
 Game.prototype.start = function(canvasEl) {
   var that = this;
   var ctx = canvasEl.getContext("2d");
-
-  var img = new Image();
-  img.onload = function () {
-    ctx.drawImage(img, xOffset, yOffset);
-  };
-  img.src = 'myImage.png';
-
-
+  this.score = 0;
+  
   var win = window.setInterval(function () {
     that.update(win);
     that.draw(ctx);
   }, 30);
+
 }
 
 function Ship(xPos, yPos, radius, game) {
@@ -170,13 +172,6 @@ function Ship(xPos, yPos, radius, game) {
 Ship.prototype = new Surrogate();
 
 Ship.prototype.draw = function (ctx) {
-  // ctx.fillStyle = "cyan";
- //  ctx.beginPath();
- //  ctx.arc(this.xPos, this.yPos, this.radius, 0, 2 * Math.PI);
- //  ctx.fill();
- //  ctx.lineWidth = 2.5;
- //  ctx.strokeStyle = "teal";
- //  ctx.stroke();
 
   ctx.save();
   ctx.clearRect(0, 0, this.game.xDim, this.game.yDim);
@@ -243,22 +238,19 @@ Bullet.prototype.update = function (velocity) {
   this.yPos += velocity["y"];
 
   if (this.offScreen(this.game.xDim, this.game.yDim) === true){
-    console.log(this.game.bullets)
     var index = this.game.bullets.indexOf(this);
     this.game.bullets.splice(index, 1);
-    console.log(this.game.bullets)
   };
 
   this.game.asteroids.forEach(function(asteroid){
     var xDist = Math.pow((asteroid.xPos - that.xPos),2);
     var yDist = Math.pow((asteroid.yPos - that.yPos),2);
     if (Math.sqrt(xDist + yDist) < (asteroid.radius + 2.5)){
-      console.log("hit");
       var index = that.game.bullets.indexOf(that);
       that.game.bullets.splice(index, 1);
       var index2 = that.game.asteroids.indexOf(asteroid);
       that.game.asteroids.splice(index2, 1);
-
+      that.game.score++;
       var a = new Asteroid();
       that.game.asteroids.push(a.randomAsteroid(that.game.xDim, that.game.yDim));
     };
